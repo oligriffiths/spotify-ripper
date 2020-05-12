@@ -7,7 +7,7 @@ client_id = ''
 client_secret = ''
 scope = 'playlist-modify-public playlist-modify-private playlist-read-collaborative'
 
-# client_id = os.environ["SPOTIPY_CLIENT_ID"] 
+# client_id = os.environ["SPOTIPY_CLIENT_ID"]
 # client_secret = os.environ["SPOTIPY_CLIENT_SECRET"]
 # redirect_uri = os.environ["SPOTIPY_REDIRECT_URI"]
 
@@ -30,10 +30,10 @@ def get_playlist_tracks(username, playlistURI):
     global rPlaylistID
     p1, p2, p3, p4, rPlaylistID = playlistURI.split(':', 5)
 
-    global token 
+    global token
     token = util.prompt_for_user_token(username, scope)
 
-    global spotInstance 
+    global spotInstance
     spotInstance = spotipy.Spotify(auth=token)
     spotInstance.trace = False
 
@@ -41,5 +41,14 @@ def get_playlist_tracks(username, playlistURI):
     results = spotInstance.user_playlist(username, rPlaylistID, fields="tracks,next")
 
     tracks = results['tracks']
+
+    # If there is a next property, paginate to the next page of results. No next property indicates no more results
+    # spotInstance.next() returns a "tracks" object not a "results" object like user_playlist()
+    result = results['tracks']
+    while result['next']:
+        result = spotInstance.next(result)
+        tracks['items'].extend(result['items'])
+
+    print('Found %d tracks' % len(tracks['items']))
 
     return tracks
